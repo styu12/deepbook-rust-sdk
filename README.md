@@ -17,7 +17,7 @@ To include the Deepbook Rust SDK in your project, add it to your `Cargo.toml`:
 [dependencies]
 deepbook-sdk = "0.1.0"
 ```
-*Note: Ensure your Rust version is 1.65.0 or higher.*
+*Note: Ensure your Rust version is 1.83.0 or higher.*
 
 ## Quick Start
 
@@ -40,9 +40,9 @@ async fn main() {
 ### Examples
 
 The examples directory contains additional examples for using the SDK:
-•	Fetching open orders for an account.
-•	Managing liquidity pools.
-•	Governance-related functions.
+- Fetching open orders for an account.
+- Managing liquidity pools.
+- Governance-related functions.
 
 ### Documentation
 
