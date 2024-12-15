@@ -1550,10 +1550,12 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bcs",
+ "futures",
  "log",
  "once_cell",
  "reqwest 0.11.27",
  "serde",
+ "serde_json",
  "sui-sdk",
  "tokio",
 ]
