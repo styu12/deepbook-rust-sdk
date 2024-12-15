@@ -3,35 +3,36 @@
 //
 // This Rust SDK is inspired by the Sui TypeScript SDK and developed independently by Jarry Han (styu12).
 
+use crate::transactions::{
+    balance_manager::BalanceManagerContract, deepbook::DeepBookContract,
+    deepbook_admin::DeepBookAdminContract, flash_loan::FlashLoanContract,
+    governance::GovernanceContract,
+};
 use crate::utils::config::DeepBookConfig;
+use anyhow::Result;
 use log::debug;
-// use crate::transactions::{
-//     balance_manager::BalanceManagerContract, deepbook::DeepBookContract,
-//     deepbook_admin::DeepBookAdminContract, flash_loans::FlashLoanContract,
-//     governance::GovernanceContract,
-// };
 
 /// Main client for managing DeepBook operations.
 ///
 /// `DeepBookClient` provides methods to interact with the DeepBook protocol,
 /// including managing balances, executing transactions, and interacting with
 /// governance and other features.
-pub struct DeepBookClient {
+pub struct DeepBookClient<'a> {
     /// Configuration for the DeepBook environment.
-    config: DeepBookConfig,
-    // /// Contract for managing account balances.
-    // pub balance_manager: BalanceManagerContract,
-    // /// Contract for interacting with the DeepBook market.
-    // pub deep_book: DeepBookContract,
-    // /// Contract for administrative tasks in DeepBook.
-    // pub deep_book_admin: DeepBookAdminContract,
-    // /// Contract for flash loan operations.
-    // pub flash_loans: FlashLoanContract,
-    // /// Contract for interacting with governance features.
-    // pub governance: GovernanceContract,
+    config: &'a DeepBookConfig,
+    /// Contract for managing account balances.
+    pub balance_manager: BalanceManagerContract<'a>,
+    /// Contract for interacting with the DeepBook market.
+    pub deep_book: DeepBookContract<'a>,
+    /// Contract for administrative tasks in DeepBook.
+    pub deep_book_admin: DeepBookAdminContract<'a>,
+    /// Contract for flash loan operations.
+    pub flash_loans: FlashLoanContract<'a>,
+    /// Contract for interacting with governance features.
+    pub governance: GovernanceContract<'a>,
 }
 
-impl DeepBookClient {
+impl<'a> DeepBookClient<'a> {
     /// Creates a new `DeepBookClient` instance.
     ///
     /// # Arguments
@@ -39,22 +40,22 @@ impl DeepBookClient {
     ///
     /// # Returns
     /// A fully initialized `DeepBookClient` instance.
-    pub fn new(config: DeepBookConfig) -> Self {
-        // let balance_manager = BalanceManagerContract::new(&config);
-        // let deep_book = DeepBookContract::new(&config);
-        // let deep_book_admin = DeepBookAdminContract::new(&config);
-        // let flash_loans = FlashLoanContract::new(&config);
-        // let governance = GovernanceContract::new(&config);
+    pub fn new(config: &'a DeepBookConfig) -> Self {
+        let balance_manager = BalanceManagerContract::new(&config);
+        let deep_book = DeepBookContract::new(&config);
+        let deep_book_admin = DeepBookAdminContract::new(&config);
+        let flash_loans = FlashLoanContract::new(&config);
+        let governance = GovernanceContract::new(&config);
 
         debug!("DeepBook client initialized, config: {:?}", config);
 
         DeepBookClient {
             config,
-            // balance_manager,
-            // deep_book,
-            // deep_book_admin,
-            // flash_loans,
-            // governance,
+            balance_manager,
+            deep_book,
+            deep_book_admin,
+            flash_loans,
+            governance,
         }
     }
 
@@ -82,4 +83,43 @@ impl DeepBookClient {
         // Transaction logic placeholder.
         Ok(true)
     }
+
+    // /// Get open orders for a balance manager in a pool.
+    // ///
+    // /// # Arguments
+    // /// * `pool_key` - The key of the pool.
+    // /// * `manager_key` - The key of the balance manager.
+    // ///
+    // /// # Returns
+    // /// A vector of open order IDs.
+    // pub async fn account_open_orders(
+    //     &self,
+    //     pool_key: &str,
+    //     manager_key: &str,
+    // ) -> Result<Vec<u128>> {
+    //     // Step 1: Create a new transaction.
+    //     let mut tx = Transaction::new();
+    //
+    //     // Step 2: Add the accountOpenOrders Move call to the transaction.
+    //     tx.add(self.balance_manager.account_open_orders(pool_key, manager_key));
+    //
+    //     // Step 3: Inspect the transaction block.
+    //     let sender = normalize_sui_address(&self.address);
+    //     let res = self
+    //         .client
+    //         .dev_inspect_transaction_block(sender, tx.build())
+    //         .await?;
+    //
+    //     // Step 4: Extract the first return value from the transaction results.
+    //     let order_ids_bcs: Vec<u8> = res.results[0]
+    //         .return_values
+    //         .get(0)
+    //         .ok_or_else(|| anyhow::anyhow!("Missing return value"))?
+    //         .0
+    //         .clone();
+    //
+    //     // Step 5: Parse the VecSet using BCS.
+    //     let vec_set: VecSet = bcs::from_bytes(&order_ids_bcs)?;
+    //     Ok(vec_set.constants)
+    // }
 }

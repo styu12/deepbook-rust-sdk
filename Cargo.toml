@@ -1,14 +1,19 @@
 [package]
-name = "deepbook-rust-sdk"
+name = "deepbook"
+authors = ["Jarry Han <styu12@kakao.com>"]
 version = "0.1.0"
 edition = "2021"
-description = "Rust SDK for Deepbook"
-license = "MIT"
+description = "Rust SDK for Sui Deepbook"
+license = "Apache-2.0"
 repository = "https://github.com/styu12/deepbook-rust-sdk"
+readme = "README.md"
 
 [dependencies]
+sui_sdk = { git = "https://github.com/mystenlabs/sui", package = "sui-sdk"}
 serde = { version = "1.0", features = ["derive"] }
 reqwest = { version = "0.11", features = ["json"] }
 tokio = { version = "1", features = ["full"] }
 once_cell = "1.20.2"
 log = "0.4.22"
+anyhow = "1.0.94"
+bcs = "0.1.6"

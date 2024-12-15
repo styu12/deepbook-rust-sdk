@@ -3,10 +3,9 @@
 //
 // This Rust SDK is inspired by the Sui TypeScript SDK and developed independently by Jarry Han (styu12).
 
-// use crate::transactions::balance_manager::BalanceManagerContract;
 use crate::utils::constants::{
-    Coin, CoinMap, Pool, PoolMap, MAINNET_COINS, MAINNET_PACKAGE_IDS, MAINNET_POOLS, TESTNET_COINS,
-    TESTNET_PACKAGE_IDS, TESTNET_POOLS,
+    BalanceManager, BalanceManagerMap, Coin, CoinMap, Pool, PoolMap, MAINNET_COINS,
+    MAINNET_PACKAGE_IDS, MAINNET_POOLS, TESTNET_COINS, TESTNET_PACKAGE_IDS, TESTNET_POOLS,
 };
 
 pub const FLOAT_SCALAR: u64 = 1_000_000_000;
@@ -19,13 +18,12 @@ pub const DEEP_SCALAR: u64 = 1_000_000;
 pub struct DeepBookConfig {
     pub coins: CoinMap,
     pub pools: PoolMap,
-    // pub balance_managers: HashMap<String, BalanceManager>,
+    pub balance_managers: BalanceManagerMap,
     pub address: String,
     pub deepbook_package_id: String,
     pub registry_id: String,
     pub deep_treasury_id: String,
     pub admin_cap: Option<String>,
-    // pub balance_manager_contract: BalanceManagerContract,
 }
 
 impl DeepBookConfig {
@@ -39,7 +37,7 @@ impl DeepBookConfig {
         env: &str,
         address: String,
         admin_cap: Option<String>,
-        // balance_managers: Option<HashMap<String, BalanceManager>>,
+        balance_managers: Option<BalanceManagerMap>,
         coins: Option<CoinMap>,
         pools: Option<PoolMap>,
     ) -> Self {
@@ -51,13 +49,12 @@ impl DeepBookConfig {
         Self {
             coins: coins.unwrap_or_else(|| (*default_coins).clone()),
             pools: pools.unwrap_or_else(|| (*default_pools).clone()),
-            // balance_managers: balance_managers.unwrap_or_default(),
+            balance_managers: balance_managers.unwrap_or_default(),
             address,
             deepbook_package_id: package_ids.deepbook_package_id.to_string(),
             registry_id: package_ids.registry_id.to_string(),
             deep_treasury_id: package_ids.deep_treasury_id.to_string(),
             admin_cap,
-            // balance_manager_contract: BalanceManagerContract::new(),
         }
     }
 
@@ -71,10 +68,10 @@ impl DeepBookConfig {
         self.pools.get(key)
     }
 
-    // /// Retrieves a balance manager by its key.
-    // pub fn get_balance_manager(&self, key: &str) -> Option<&BalanceManager> {
-    //     self.balance_managers.get(key)
-    // }
+    /// Retrieves a balance manager by its key.
+    pub fn get_balance_manager(&self, key: &str) -> Option<&BalanceManager> {
+        self.balance_managers.get(key)
+    }
 }
 
 #[cfg(test)]
@@ -88,6 +85,7 @@ mod tests {
             "mainnet",
             "test_address".to_string(),
             Some("admin_cap".to_string()),
+            None,
             None,
             None,
         );
@@ -109,6 +107,7 @@ mod tests {
             Some("admin_cap".to_string()),
             None,
             None,
+            None,
         );
 
         assert_eq!(config.address, "test_address");
@@ -121,26 +120,36 @@ mod tests {
     }
 
     #[test]
-    fn test_config_custom_coins_and_pools() {
+    fn test_config_custom_balance_managers_and_coins_and_pools() {
         let custom_coins = CoinMap::new();
         let custom_pools = PoolMap::new();
+        let custom_balance_managers = BalanceManagerMap::new();
 
         let config = DeepBookConfig::new(
             "mainnet",
             "custom_address".to_string(),
             None,
+            Some(custom_balance_managers.clone()),
             Some(custom_coins.clone()),
             Some(custom_pools.clone()),
         );
 
         assert_eq!(config.address, "custom_address");
+        assert_eq!(config.balance_managers, custom_balance_managers);
         assert_eq!(config.coins, custom_coins);
         assert_eq!(config.pools, custom_pools);
     }
 
     #[test]
     fn test_get_coin() {
-        let config = DeepBookConfig::new("testnet", "test_address".to_string(), None, None, None);
+        let config = DeepBookConfig::new(
+            "testnet",
+            "test_address".to_string(),
+            None,
+            None,
+            None,
+            None,
+        );
 
         let coin = config.get_coin("DEEP");
         assert!(coin.is_some());
@@ -155,7 +164,14 @@ mod tests {
 
     #[test]
     fn test_get_pool() {
-        let config = DeepBookConfig::new("testnet", "test_address".to_string(), None, None, None);
+        let config = DeepBookConfig::new(
+            "testnet",
+            "test_address".to_string(),
+            None,
+            None,
+            None,
+            None,
+        );
 
         let pool = config.get_pool("DEEP_SUI");
         assert!(pool.is_some());
@@ -169,8 +185,46 @@ mod tests {
     }
 
     #[test]
+    fn test_get_balance_manager() {
+        let mut custom_balance_managers = BalanceManagerMap::new();
+        custom_balance_managers.insert(
+            "manager1".to_string(),
+            BalanceManager {
+                address: "0xmanager1".to_string(),
+                trade_cap: Some("0xtradecap1".to_string()),
+            },
+        );
+
+        let config = DeepBookConfig::new(
+            "mainnet",
+            "test_address".to_string(),
+            None,
+            Some(custom_balance_managers.clone()),
+            None,
+            None,
+        );
+
+        let balance_manager = config.get_balance_manager("manager1");
+        assert!(balance_manager.is_some());
+        assert_eq!(
+            balance_manager.unwrap().address,
+            custom_balance_managers.get("manager1").unwrap().address
+        );
+
+        let nonexistent_manager = config.get_balance_manager("nonexistent");
+        assert!(nonexistent_manager.is_none());
+    }
+
+    #[test]
     fn test_invalid_env_defaults_to_testnet() {
-        let config = DeepBookConfig::new("unknown", "test_address".to_string(), None, None, None);
+        let config = DeepBookConfig::new(
+            "unknown",
+            "test_address".to_string(),
+            None,
+            None,
+            None,
+            None,
+        );
 
         assert_eq!(
             config.deepbook_package_id,

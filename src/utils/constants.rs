@@ -6,8 +6,16 @@
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
 
+pub type BalanceManagerMap = HashMap<String, BalanceManager>;
 pub type CoinMap = HashMap<String, Coin>;
 pub type PoolMap = HashMap<String, Pool>;
+
+/// Represents a balance manager in the DeepBook ecosystem.
+#[derive(Clone, Debug, PartialEq)]
+pub struct BalanceManager {
+    pub address: String,
+    pub trade_cap: Option<String>,
+}
 
 /// Represents a coin in the DeepBook ecosystem.
 #[derive(Clone, Debug, PartialEq)]

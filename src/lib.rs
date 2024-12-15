@@ -5,6 +5,7 @@
 
 pub mod client;
 // pub mod transactions;
+mod transactions;
 pub mod utils;
 // pub mod types;
 
