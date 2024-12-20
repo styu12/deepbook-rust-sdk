@@ -15,7 +15,7 @@ To include the Deepbook Rust SDK in your project, add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-deepbook = "0.1.0"
+deepbook = "0.0.1"
 ```
 *Note: Ensure your Rust version is 1.83.0 or higher.*
 
@@ -28,11 +28,14 @@ use deepbook_sdk::client::DeepbookClient;
 
 #[tokio::main]
 async fn main() {
-    let client = DeepbookClient::new("https://api.deepbook.com");
-
-    match client.get_balance("account123").await {
-        Ok(balance) => println!("Account balance: {}", balance),
-        Err(e) => eprintln!("Error fetching balance: {}", e),
+    let client = DeepBookClient::new(
+        sui_client,
+        &db_config,
+    );
+    
+    match client.check_manager_balance("MANAGER_1", "SUI").await {
+        Ok(balance) => println!("Balance: {:?}", balance),
+        Err(e) => println!("Error fetching balance: {}", e),
     }
 }
 ```
@@ -41,6 +44,7 @@ async fn main() {
 
 The examples directory contains additional examples for using the SDK:
 - Fetching open orders for an account.
+- Checking manager balances.
 - Managing liquidity pools.
 - Governance-related functions.
 

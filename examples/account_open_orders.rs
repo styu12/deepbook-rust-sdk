@@ -1,5 +1,4 @@
-// examples/account_open_orders.rs
-// Example: Fetch open orders for a balance manager in a specific pool
+/// Example: Fetch open orders for a balance manager in a specific pool
 
 mod utils;
 
@@ -10,32 +9,12 @@ use sui_sdk::types::programmable_transaction_builder::ProgrammableTransactionBui
 use sui_sdk::types::transaction::CallArg;
 use tokio;
 use deepbook::DeepBookConfig;
-use crate::utils::setup_for_write;
+use crate::utils::{setup_for_read, setup_for_write};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Step 1: Initialize Sui client
-
-    // (1) get the Sui client, the sender and recipient that we will use
-    // for the transaction, and find the coin we use as gas
-    let (sui, sender, _recipient) = setup_for_write().await?;
-
-    // we need to find the coin we will use as gas
-    let coins = sui
-        .coin_read_api()
-        .get_coins(sender, None, None, None)
-        .await?;
-    let coin = coins.data.into_iter().next().unwrap();
-
-    // (2) create a programmable transaction builder to add commands and create a PTB
-    let mut ptb = ProgrammableTransactionBuilder::new();
-
-    // Create an Argument::Input for Pure 6 value of type u64
-    let input_value = 10u64;
-    let input_argument = CallArg::Pure(bcs::to_bytes(&input_value).unwrap());
-
-    // Add this input to the builder
-    ptb.input(input_argument)?;
+    let (sui, sender) = setup_for_read().await?;
 
     // Step 2: Define environment
     let env = "testnet";
@@ -45,7 +24,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     balance_managers.insert(
         "MANAGER_1".to_string(),
         BalanceManager {
-            address: "0x344c2734b1d211bd15212bfb7847c66a3b18803f3f5ab00f5ff6f87b6fe6d27d".to_string(),
+            // address: "0x6149bfe6808f0d6a9db1c766552b7ae1df477f5885493436214ed4228e842393".to_string(),
+            address: "0x0cb45faadd6c3769bd825dfd3538e34d6c658a0b55a8caa52e03c46b07aef8b9".to_string(), // my testnet balance manager
             trade_cap: None,
         },
     );
