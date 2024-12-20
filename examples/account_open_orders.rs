@@ -24,8 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     balance_managers.insert(
         "MANAGER_1".to_string(),
         BalanceManager {
-            // address: "0x6149bfe6808f0d6a9db1c766552b7ae1df477f5885493436214ed4228e842393".to_string(),
-            address: "0x0cb45faadd6c3769bd825dfd3538e34d6c658a0b55a8caa52e03c46b07aef8b9".to_string(), // my testnet balance manager
+            address: "0x0cb45faadd6c3769bd825dfd3538e34d6c658a0b55a8caa52e03c46b07aef8b9".to_string(),
             trade_cap: None,
         },
     );

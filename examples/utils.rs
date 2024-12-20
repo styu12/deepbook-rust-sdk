@@ -26,7 +26,6 @@ struct FaucetResponse {
     error: Option<String>,
 }
 
-// const SUI_FAUCET: &str = "https://faucet.devnet.sui.io/gas"; // devnet faucet
 pub const SUI_FAUCET: &str = "https://faucet.testnet.sui.io/v1/gas"; // testnet faucet
 pub const SUI_STATUS: &str = "https://faucet.testnet.sui.io/v1/status"; // testnet status
 // TODO: change the address to the one you want to use for testing
@@ -124,63 +123,6 @@ pub async fn request_tokens_from_faucet(
     if let Err(e) = check_faucet_request_status(address, task_id, &client, sui_client).await {
         bail!("Faucet request failed: {e}")
     }
-
-    // let json_body = json![{
-    //     "GetBatchSendStatusRequest": {
-    //         "task_id": &task_id
-    //     }
-    // }];
-    //
-    // let mut coin_id = "".to_string();
-    //
-    // // wait for the faucet to finish the batch of token requests
-    // loop {
-    //     let resp = client
-    //         .get(SUI_STATUS)
-    //         .header("Content-Type", "application/json")
-    //         .json(&json_body)
-    //         .send()
-    //         .await?;
-    //     let text = resp.text().await?;
-    //     if text.contains("SUCCEEDED") {
-    //         let resp_json: serde_json::Value = serde_json::from_str(&text).unwrap();
-    //
-    //         coin_id = <&str>::clone(
-    //             &resp_json
-    //                 .pointer("/status/transferred_gas_objects/sent/0/id")
-    //                 .unwrap()
-    //                 .as_str()
-    //                 .unwrap(),
-    //         )
-    //             .to_string();
-    //
-    //         println!("Faucet request succeeded. Coin ID: {coin_id}");
-    //
-    //         break;
-    //     } else {
-    //         tokio::time::sleep(Duration::from_secs(1)).await;
-    //     }
-    // }
-    //
-    // // wait until the fullnode has the coin object, and check if it has the same owner
-    // loop {
-    //     let owner = sui_client
-    //         .read_api()
-    //         .get_object_with_options(
-    //             ObjectID::from_str(&coin_id)?,
-    //             SuiObjectDataOptions::new().with_owner(),
-    //         )
-    //         .await?;
-    //
-    //     if owner.owner().is_some() {
-    //         let owner_address = owner.owner().unwrap().get_owner_address()?;
-    //         if owner_address == address {
-    //             break;
-    //         }
-    //     } else {
-    //         tokio::time::sleep(Duration::from_secs(1)).await;
-    //     }
-    // }
 
     Ok(())
 }
