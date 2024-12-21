@@ -11,14 +11,21 @@ use crate::transactions::{
     governance::GovernanceContract,
 };
 use crate::utils::config::DeepBookConfig;
-use anyhow::{Result};
+use anyhow::{anyhow, Result};
 use log::debug;
+use sui_sdk::rpc_types;
+use sui_sdk::rpc_types::SuiObjectDataOptions;
 use sui_sdk::types::programmable_transaction_builder::ProgrammableTransactionBuilder;
-use sui_sdk::types::transaction::{CallArg, TransactionKind};
+use sui_sdk::types::transaction::{CallArg, Command, ObjectArg, TransactionKind};
 use sui_sdk::SuiClient;
 use sui_sdk::types::base_types::SuiAddress;
 use sui_sdk::types::collection_types::VecSet;
 use sui_sdk::types::sui_serde::BigInt;
+use sui_sdk::types::TypeTag;
+use sui_types::base_types::ObjectID;
+use sui_types::Identifier;
+use sui_types::transaction::Argument;
+use sui_types::object::Owner;
 
 /// Main client for managing DeepBook operations.
 ///
@@ -207,6 +214,70 @@ impl<'a> DeepBookClient<'a> {
             "coinType": coin.type_,
             "balance": format!("{:.9}", adjusted_balance).parse::<f64>()?,
         }))
+    }
+
+    pub async fn deposit_into_manager(
+        &self,
+        ptb: &mut ProgrammableTransactionBuilder,
+        manager_key: &str,
+        coin_key: &str,
+        amount_to_deposit: u64,
+    ) -> Result<()> {
+        let coin = self
+            .config
+            .get_coin(coin_key)
+            .expect("Coin not found");
+        let deposit_input = amount_to_deposit * coin.scalar;
+        let coin_type = TypeTag::from_str(&coin.type_)?;
+
+        let split_cmd = Command::SplitCoins(
+            Argument::GasCoin,
+            vec![ptb.pure(deposit_input)?],
+        );
+        let target_coin = ptb.command(split_cmd);
+
+        let manager = self
+            .config
+            .get_balance_manager(manager_key)
+            .ok_or_else(|| anyhow!("Manager not found for key {}", manager_key))?;
+
+        let manager_obj = self.client.read_api().get_object_with_options(
+            ObjectID::from_hex_literal(&manager.address)?,
+            SuiObjectDataOptions::new()
+                .with_content()
+                .with_type()
+                .with_owner(),
+        ).await?;
+
+        match manager_obj.owner() {
+            Some(owner) => {
+                match owner {
+                    Owner::Shared { initial_shared_version, .. } => {
+                        let initial_shared_version = initial_shared_version.clone();
+                        let manager_argument = ptb.obj(ObjectArg::SharedObject {
+                            id: ObjectID::from_hex_literal(&manager.address)?,
+                            initial_shared_version,
+                            mutable: true,
+                        })?;
+                        ptb.programmable_move_call(
+                            ObjectID::from_hex_literal(&self.config.deepbook_package_id)?,
+                            Identifier::new("balance_manager")?,
+                            Identifier::new("deposit")?,
+                            vec![coin_type],
+                            vec![manager_argument, target_coin],
+                        );
+                    }
+                    _ => {
+                        return Err(anyhow!("BalanceManager must be a shared object"));
+                    }
+                }
+            },
+            None => {
+                return Err(anyhow!("BalanceManager has no owner"));
+            }
+        }
+
+        Ok(())
     }
 
     // pub async fn create_and_share_balance_manager(

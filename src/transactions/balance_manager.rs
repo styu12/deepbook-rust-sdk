@@ -6,8 +6,14 @@
 use std::{str::FromStr};
 use crate::utils::config::DeepBookConfig;
 use anyhow::anyhow;
-use sui_sdk::types::{base_types::ObjectID, programmable_transaction_builder::ProgrammableTransactionBuilder, transaction::CallArg, Identifier, TypeTag};
-use sui_sdk::types::transaction::ObjectArg;
+use sui_sdk::types::{
+    base_types::{ObjectID, SequenceNumber},
+    programmable_transaction_builder::ProgrammableTransactionBuilder,
+    transaction::CallArg,
+    Identifier,
+    TypeTag,
+};
+use sui_sdk::types::transaction::{Argument, ObjectArg};
 use crate::utils::constants::Coin;
 
 #[derive(Debug)]
@@ -64,7 +70,7 @@ impl<'a> BalanceManagerContract<'a> {
             .ok_or_else(|| anyhow!("Manager not found for key {}", manager_key))?;
 
         let coin_type = TypeTag::from_str(&coin.type_)?;
-        let manager = ptb.obj(ObjectArg::SharedObject {
+        let manager_obj = ptb.obj(ObjectArg::SharedObject {
             id: ObjectID::from_hex_literal(&manager.address)?,
             initial_shared_version: 0.into(),
             mutable: false,
@@ -75,7 +81,7 @@ impl<'a> BalanceManagerContract<'a> {
             Identifier::new("balance_manager")?,
             Identifier::new("balance")?,
             vec![coin_type],
-            vec![manager],
+            vec![manager_obj],
         );
 
         Ok(())
@@ -91,36 +97,36 @@ impl<'a> BalanceManagerContract<'a> {
     //     tx.move_call(format!("0x2::transfer::public_share_object"));
     //     tx.add_arguments(vec![manager]);
     // }
-    //
+
     // /// Deposit funds into the BalanceManager.
     // pub fn deposit_into_manager(
     //     &self,
-    //     tx: &mut Transaction,
+    //     ptb: &mut ProgrammableTransactionBuilder,
     //     manager_key: &str,
-    //     coin_key: &str,
-    //     amount_to_deposit: u64,
-    // ) {
-    //     tx.set_sender_if_not_set(&self.config.address);
+    //     coin_type: TypeTag,
+    //     initial_shared_version: SequenceNumber,
+    // ) -> Result<(), anyhow::Error> {
     //
-    //     let manager_id = self
+    //     let manager = self
     //         .config
     //         .get_balance_manager(manager_key)
-    //         .expect("Manager not found")
-    //         .address
-    //         .clone();
+    //         .ok_or_else(|| anyhow!("Manager not found for key {}", manager_key))?;
     //
-    //     let coin = self
-    //         .config
-    //         .get_coin(coin_key)
-    //         .expect("Coin not found");
-    //     let deposit_input = amount_to_deposit * coin.scalar;
+    //     let manager_obj = ptb.obj(ObjectArg::SharedObject {
+    //         id: ObjectID::from_hex_literal(&manager.address)?,
+    //         initial_shared_version,
+    //         mutable: false,
+    //     })?;
     //
-    //     tx.move_call(format!(
-    //         "{}::balance_manager::deposit",
-    //         self.config.deepbook_package_id
-    //     ));
-    //     tx.add_arguments(vec![tx.object(&manager_id), deposit_input]);
-    //     tx.add_type_arguments(vec![coin.type_.clone()]);
+    //     ptb.programmable_move_call(
+    //         ObjectID::from_hex_literal(&self.config.deepbook_package_id)?,
+    //         Identifier::new("balance_manager")?,
+    //         Identifier::new("deposit")?,
+    //         vec![coin_type],
+    //         vec![manager_obj, Argument::Result(0)],
+    //     );
+    //
+    //     Ok(())
     // }
     //
     // /// Withdraw funds from the BalanceManager.

@@ -1217,7 +1217,7 @@ name = "consensus-config"
 version = "0.1.0"
 source = "git+https://github.com/mystenlabs/sui#03586ce9c499466772cc1a42a4d77f719e26633b"
 dependencies = [
- "fastcrypto",
+ "fastcrypto 0.1.8 (git+https://github.com/MystenLabs/fastcrypto?rev=69d496c71fb37e3d22fe85e5bbfd4256d61422b9)",
  "mysten-network",
  "rand",
  "serde",
@@ -1546,17 +1546,22 @@ dependencies = [
 
 [[package]]
 name = "deepbook"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "bcs",
+ "fastcrypto 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures",
  "log",
  "once_cell",
  "reqwest 0.11.27",
  "serde",
  "serde_json",
+ "shared-crypto",
+ "sui-config",
+ "sui-keys",
  "sui-sdk",
+ "sui-types",
  "tokio",
 ]
 
@@ -1956,6 +1961,58 @@ dependencies = [
 [[package]]
 name = "fastcrypto"
 version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f9ea2139faa96e4d713803b7777b8fd2d5c245858b1644c08d3220f407149c6"
+dependencies = [
+ "ark-ec",
+ "ark-ff",
+ "ark-secp256r1",
+ "ark-serialize",
+ "auto_ops",
+ "base64ct",
+ "bech32",
+ "bincode",
+ "blake2",
+ "blst",
+ "bs58 0.4.0",
+ "curve25519-dalek-ng",
+ "derive_more 0.99.18",
+ "digest 0.10.7",
+ "ecdsa 0.16.9",
+ "ed25519-consensus",
+ "elliptic-curve 0.13.8",
+ "eyre",
+ "fastcrypto-derive 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "generic-array",
+ "hex",
+ "hex-literal",
+ "hkdf",
+ "lazy_static",
+ "num-bigint 0.4.6",
+ "once_cell",
+ "p256",
+ "rand",
+ "readonly",
+ "rfc6979 0.4.0",
+ "rsa",
+ "schemars",
+ "secp256k1",
+ "serde",
+ "serde_json",
+ "serde_with 2.3.3",
+ "sha2 0.10.8",
+ "sha3",
+ "signature 2.2.0",
+ "static_assertions",
+ "thiserror 1.0.69",
+ "tokio",
+ "typenum",
+ "zeroize",
+]
+
+[[package]]
+name = "fastcrypto"
+version = "0.1.8"
 source = "git+https://github.com/MystenLabs/fastcrypto?rev=69d496c71fb37e3d22fe85e5bbfd4256d61422b9#69d496c71fb37e3d22fe85e5bbfd4256d61422b9"
 dependencies = [
  "aes",
@@ -1979,7 +2036,7 @@ dependencies = [
  "ecdsa 0.16.9",
  "ed25519-consensus",
  "elliptic-curve 0.13.8",
- "fastcrypto-derive",
+ "fastcrypto-derive 0.1.3 (git+https://github.com/MystenLabs/fastcrypto?rev=69d496c71fb37e3d22fe85e5bbfd4256d61422b9)",
  "generic-array",
  "hex",
  "hex-literal",
@@ -1996,7 +2053,7 @@ dependencies = [
  "secp256k1",
  "serde",
  "serde_json",
- "serde_with",
+ "serde_with 3.11.0",
  "sha2 0.10.8",
  "sha3",
  "signature 2.2.0",
@@ -2005,6 +2062,18 @@ dependencies = [
  "tokio",
  "typenum",
  "zeroize",
+]
+
+[[package]]
+name = "fastcrypto-derive"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4c0c2af2157f416cb885e11d36cd0de2753f6d5384752d364075c835f5f8f891"
+dependencies = [
+ "convert_case 0.6.0",
+ "proc-macro2 1.0.92",
+ "quote 1.0.37",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -2023,7 +2092,7 @@ source = "git+https://github.com/MystenLabs/fastcrypto?rev=69d496c71fb37e3d22fe8
 dependencies = [
  "bcs",
  "digest 0.10.7",
- "fastcrypto",
+ "fastcrypto 0.1.8 (git+https://github.com/MystenLabs/fastcrypto?rev=69d496c71fb37e3d22fe85e5bbfd4256d61422b9)",
  "hex",
  "itertools 0.10.5",
  "rand",
@@ -2050,7 +2119,7 @@ dependencies = [
  "bcs",
  "byte-slice-cast",
  "derive_more 0.99.18",
- "fastcrypto",
+ "fastcrypto 0.1.8 (git+https://github.com/MystenLabs/fastcrypto?rev=69d496c71fb37e3d22fe85e5bbfd4256d61422b9)",
  "ff 0.13.0",
  "im",
  "itertools 0.12.1",
@@ -3563,7 +3632,7 @@ dependencies = [
  "ref-cast",
  "serde",
  "serde_bytes",
- "serde_with",
+ "serde_with 3.11.0",
  "thiserror 1.0.69",
  "uint",
 ]
@@ -3793,7 +3862,7 @@ version = "0.1.0"
 source = "git+https://github.com/mystenlabs/sui#03586ce9c499466772cc1a42a4d77f719e26633b"
 dependencies = [
  "anyhow",
- "fastcrypto",
+ "fastcrypto 0.1.8 (git+https://github.com/MystenLabs/fastcrypto?rev=69d496c71fb37e3d22fe85e5bbfd4256d61422b9)",
  "futures",
  "mysten-metrics",
  "parking_lot",
@@ -5656,6 +5725,22 @@ dependencies = [
 
 [[package]]
 name = "serde_with"
+version = "2.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "07ff71d2c147a7b57362cead5e22f772cd52f6ab31cfcd9edcd7f6aeb2a0afbe"
+dependencies = [
+ "base64 0.13.1",
+ "chrono",
+ "hex",
+ "indexmap 1.9.3",
+ "serde",
+ "serde_json",
+ "serde_with_macros 2.3.3",
+ "time",
+]
+
+[[package]]
+name = "serde_with"
 version = "3.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e28bdad6db2b8340e449f7108f020b3b092e8583a9e3fb82713e1d4e71fe817"
@@ -5668,8 +5753,20 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "serde_with_macros",
+ "serde_with_macros 3.11.0",
  "time",
+]
+
+[[package]]
+name = "serde_with_macros"
+version = "2.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "881b6f881b17d13214e5d494c939ebab463d01264ce1811e9d4ac3a882e7695f"
+dependencies = [
+ "darling 0.20.10",
+ "proc-macro2 1.0.92",
+ "quote 1.0.37",
+ "syn 2.0.90",
 ]
 
 [[package]]
@@ -5761,7 +5858,7 @@ source = "git+https://github.com/mystenlabs/sui#03586ce9c499466772cc1a42a4d77f71
 dependencies = [
  "bcs",
  "eyre",
- "fastcrypto",
+ "fastcrypto 0.1.8 (git+https://github.com/MystenLabs/fastcrypto?rev=69d496c71fb37e3d22fe85e5bbfd4256d61422b9)",
  "serde",
  "serde_repr",
 ]
@@ -6053,7 +6150,7 @@ dependencies = [
  "consensus-config",
  "csv",
  "dirs",
- "fastcrypto",
+ "fastcrypto 0.1.8 (git+https://github.com/MystenLabs/fastcrypto?rev=69d496c71fb37e3d22fe85e5bbfd4256d61422b9)",
  "move-vm-config",
  "mysten-common",
  "object_store",
@@ -6062,7 +6159,7 @@ dependencies = [
  "rand",
  "reqwest 0.12.9",
  "serde",
- "serde_with",
+ "serde_with 3.11.0",
  "serde_yaml",
  "sui-keys",
  "sui-protocol-config",
@@ -6086,7 +6183,7 @@ source = "git+https://github.com/mystenlabs/sui#03586ce9c499466772cc1a42a4d77f71
 dependencies = [
  "anyhow",
  "bcs",
- "fastcrypto",
+ "fastcrypto 0.1.8 (git+https://github.com/MystenLabs/fastcrypto?rev=69d496c71fb37e3d22fe85e5bbfd4256d61422b9)",
  "move-binary-format",
  "move-bytecode-utils",
  "move-core-types",
@@ -6102,7 +6199,7 @@ version = "0.0.0"
 source = "git+https://github.com/mystenlabs/sui#03586ce9c499466772cc1a42a4d77f719e26633b"
 dependencies = [
  "anyhow",
- "fastcrypto",
+ "fastcrypto 0.1.8 (git+https://github.com/MystenLabs/fastcrypto?rev=69d496c71fb37e3d22fe85e5bbfd4256d61422b9)",
  "jsonrpsee",
  "mysten-metrics",
  "once_cell",
@@ -6125,7 +6222,7 @@ dependencies = [
  "bcs",
  "colored",
  "enum_dispatch",
- "fastcrypto",
+ "fastcrypto 0.1.8 (git+https://github.com/MystenLabs/fastcrypto?rev=69d496c71fb37e3d22fe85e5bbfd4256d61422b9)",
  "itertools 0.13.0",
  "json_to_table",
  "move-binary-format",
@@ -6135,7 +6232,7 @@ dependencies = [
  "schemars",
  "serde",
  "serde_json",
- "serde_with",
+ "serde_with 3.11.0",
  "sui-enum-compat-util",
  "sui-json",
  "sui-macros",
@@ -6153,7 +6250,7 @@ source = "git+https://github.com/mystenlabs/sui#03586ce9c499466772cc1a42a4d77f71
 dependencies = [
  "anyhow",
  "bip32",
- "fastcrypto",
+ "fastcrypto 0.1.8 (git+https://github.com/MystenLabs/fastcrypto?rev=69d496c71fb37e3d22fe85e5bbfd4256d61422b9)",
  "rand",
  "regex",
  "serde",
@@ -6243,7 +6340,7 @@ dependencies = [
  "schemars",
  "serde",
  "serde-env",
- "serde_with",
+ "serde_with 3.11.0",
  "sui-protocol-config-macros",
  "tracing",
 ]
@@ -6269,7 +6366,7 @@ dependencies = [
  "bcs",
  "bytes",
  "documented",
- "fastcrypto",
+ "fastcrypto 0.1.8 (git+https://github.com/MystenLabs/fastcrypto?rev=69d496c71fb37e3d22fe85e5bbfd4256d61422b9)",
  "http 1.2.0",
  "itertools 0.13.0",
  "mime",
@@ -6286,7 +6383,7 @@ dependencies = [
  "schemars",
  "serde",
  "serde_json",
- "serde_with",
+ "serde_with 3.11.0",
  "serde_yaml",
  "sui-protocol-config",
  "sui-sdk-types",
@@ -6310,7 +6407,7 @@ dependencies = [
  "bcs",
  "clap",
  "colored",
- "fastcrypto",
+ "fastcrypto 0.1.8 (git+https://github.com/MystenLabs/fastcrypto?rev=69d496c71fb37e3d22fe85e5bbfd4256d61422b9)",
  "futures",
  "futures-core",
  "jsonrpsee",
@@ -6318,7 +6415,7 @@ dependencies = [
  "reqwest 0.12.9",
  "serde",
  "serde_json",
- "serde_with",
+ "serde_with 3.11.0",
  "shared-crypto",
  "sui-config",
  "sui-json",
@@ -6348,7 +6445,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "serde_with",
+ "serde_with 3.11.0",
  "winnow",
 ]
 
@@ -6362,7 +6459,7 @@ dependencies = [
  "axum",
  "axum-server",
  "ed25519",
- "fastcrypto",
+ "fastcrypto 0.1.8 (git+https://github.com/MystenLabs/fastcrypto?rev=69d496c71fb37e3d22fe85e5bbfd4256d61422b9)",
  "pkcs8 0.9.0",
  "rcgen",
  "reqwest 0.12.9",
@@ -6408,7 +6505,7 @@ dependencies = [
  "derive_more 1.0.0",
  "enum_dispatch",
  "eyre",
- "fastcrypto",
+ "fastcrypto 0.1.8 (git+https://github.com/MystenLabs/fastcrypto?rev=69d496c71fb37e3d22fe85e5bbfd4256d61422b9)",
  "fastcrypto-tbls",
  "fastcrypto-zkp",
  "im",
@@ -6443,7 +6540,7 @@ dependencies = [
  "serde",
  "serde-name",
  "serde_json",
- "serde_with",
+ "serde_with 3.11.0",
  "shared-crypto",
  "signature 1.6.4",
  "static_assertions",

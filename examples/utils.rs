@@ -4,21 +4,14 @@ use futures::{future, stream::StreamExt};
 use serde_json::json;
 use anyhow::bail;
 use reqwest::Client;
-use sui_sdk::{
-    SuiClient,
-    SuiClientBuilder,
-    sui_client_config::{SuiClientConfig, SuiEnv},
-    wallet_context::WalletContext,
-    types::{
-        base_types::{ObjectID, SuiAddress},
-        crypto::SignatureScheme::ED25519,
-        digests::TransactionDigest,
-        programmable_transaction_builder::ProgrammableTransactionBuilder,
-        quorum_driver_types::ExecuteTransactionRequestType,
-        transaction::{Argument, Command, Transaction, TransactionData},
-    },
-    rpc_types::{SuiTransactionBlockResponseOptions, Coin, SuiObjectDataOptions},
-};
+use sui_sdk::{SuiClient, SuiClientBuilder, sui_client_config::{SuiClientConfig, SuiEnv}, wallet_context::WalletContext, types::{
+    base_types::{ObjectID, SuiAddress},
+    crypto::SignatureScheme::ED25519,
+    digests::TransactionDigest,
+    programmable_transaction_builder::ProgrammableTransactionBuilder,
+    quorum_driver_types::ExecuteTransactionRequestType,
+    transaction::{Argument, Command, Transaction, TransactionData},
+}, rpc_types::{SuiTransactionBlockResponseOptions, Coin, SuiObjectDataOptions}, rpc_types};
 
 #[derive(serde::Deserialize)]
 struct FaucetResponse {
@@ -29,8 +22,8 @@ struct FaucetResponse {
 pub const SUI_FAUCET: &str = "https://faucet.testnet.sui.io/v1/gas"; // testnet faucet
 pub const SUI_STATUS: &str = "https://faucet.testnet.sui.io/v1/status"; // testnet status
 // TODO: change the address to the one you want to use for testing
-const SENDER_ADDRESS: &str = "0xf4225f3f311cd5aa6ca53df437cb8cbd9d34b1bc979ff89e9356587692e21ebf";
-const RECIPIENT_ADDRESS: &str = "0x63caf24ab6dfc41c44fd67e7e117e2f0a4ef0f636fed9ddddde2f1bd230bae8e";
+const SENDER_ADDRESS: &str = "0x63caf24ab6dfc41c44fd67e7e117e2f0a4ef0f636fed9ddddde2f1bd230bae8e";
+const RECIPIENT_ADDRESS: &str = "0xf4225f3f311cd5aa6ca53df437cb8cbd9d34b1bc979ff89e9356587692e21ebf";
 
 /// Return a sui client to interact with the APIs,
 /// the active address of the local wallet, and another address that can be used as a recipient.
@@ -191,4 +184,33 @@ pub async fn check_faucet_request_status(
     }
 
     Ok(())
+}
+
+
+// get user coins, only for verified coins,
+// if not verified, please use client.read_api().get_owned_objects
+pub async fn get_all_coins(
+    client: &SuiClient,
+    address: SuiAddress,
+    coin_type: &str,
+) -> anyhow::Result<Vec<rpc_types::Coin>> {
+    let mut cursor = None;
+    let mut coins = vec![];
+
+    loop {
+        let coins_res = client
+            .coin_read_api()
+            .get_coins(
+                address,
+                Some(coin_type.to_string()), cursor, None) // default limit is 50
+            .await?;
+
+        coins.extend(coins_res.data);
+        if coins_res.has_next_page {
+            cursor = coins_res.next_cursor;
+            continue;
+        }
+
+        return Ok(coins);
+    }
 }
