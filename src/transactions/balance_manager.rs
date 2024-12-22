@@ -87,6 +87,41 @@ impl<'a> BalanceManagerContract<'a> {
         Ok(())
     }
 
+    /// Generate a trade proof as the owner.
+    pub fn generate_proof_as_owner(
+        &self,
+        ptb: &mut ProgrammableTransactionBuilder,
+        manager_argument: Argument,
+    ) -> Argument {
+        let trade_proof = ptb.programmable_move_call(
+            ObjectID::from_hex_literal(&self.config.deepbook_package_id).unwrap(),
+            Identifier::new("balance_manager").unwrap(),
+            Identifier::new("generate_proof_as_owner").unwrap(),
+            vec![],
+            vec![manager_argument],
+        );
+
+        trade_proof
+    }
+
+    /// Generate a trade proof as a trader.
+    pub fn generate_proof_as_trader(
+        &self,
+        ptb: &mut ProgrammableTransactionBuilder,
+        manager_argument: Argument,
+        trade_cap_argument: Argument,
+    ) -> Argument {
+        let trade_proof = ptb.programmable_move_call(
+            ObjectID::from_hex_literal(&self.config.deepbook_package_id).unwrap(),
+            Identifier::new("balance_manager").unwrap(),
+            Identifier::new("generate_proof_as_trader").unwrap(),
+            vec![],
+            vec![manager_argument, trade_cap_argument],
+        );
+
+        trade_proof
+    }
+
     // /// Create and share a new BalanceManager.
     // pub fn create_and_share_balance_manager_test(&self, tx: &mut Transaction) {
     //     let manager = tx.move_call(format!(
@@ -190,42 +225,8 @@ impl<'a> BalanceManagerContract<'a> {
     // }
     //
     //
-    // /// Generate a trade proof for the BalanceManager.
-    // pub fn generate_proof(&self, tx: &mut Transaction, manager_key: &str) {
-    //     let balance_manager = self
-    //         .config
-    //         .get_balance_manager(manager_key)
-    //         .expect("Manager not found");
-    //
-    //     if let Some(trade_cap) = &balance_manager.trade_cap {
-    //         self.generate_proof_as_trader(tx, &balance_manager.address, trade_cap);
-    //     } else {
-    //         self.generate_proof_as_owner(tx, &balance_manager.address);
-    //     }
-    // }
-    //
-    // /// Generate a trade proof as the owner.
-    // pub fn generate_proof_as_owner(&self, tx: &mut Transaction, manager_id: &str) {
-    //     tx.move_call(format!(
-    //         "{}::balance_manager::generate_proof_as_owner",
-    //         self.config.deepbook_package_id
-    //     ));
-    //     tx.add_arguments(vec![tx.object(manager_id)]);
-    // }
-    //
-    // /// Generate a trade proof as a trader.
-    // pub fn generate_proof_as_trader(
-    //     &self,
-    //     tx: &mut Transaction,
-    //     manager_id: &str,
-    //     trade_cap_id: &str,
-    // ) {
-    //     tx.move_call(format!(
-    //         "{}::balance_manager::generate_proof_as_trader",
-    //         self.config.deepbook_package_id
-    //     ));
-    //     tx.add_arguments(vec![tx.object(manager_id), tx.object(trade_cap_id)]);
-    // }
+
+
     //
     // /// Get the owner of the BalanceManager.
     // pub fn owner(&self, tx: &mut Transaction, manager_key: &str) {

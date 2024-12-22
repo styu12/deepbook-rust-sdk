@@ -11,6 +11,42 @@ use sui_sdk::types::base_types::{ObjectID, SequenceNumber};
 use sui_sdk::types::transaction::ObjectArg;
 use crate::DeepBookConfig;
 
+#[derive(Debug)]
+pub enum OrderType {
+    NoRestriction,
+    ImmediateOrCancel,
+    FillOrKill,
+    PostOnly
+}
+
+impl OrderType {
+    pub fn as_u8(&self) -> u8 {
+        match self {
+            OrderType::NoRestriction => 0,
+            OrderType::ImmediateOrCancel => 1,
+            OrderType::FillOrKill => 2,
+            OrderType::PostOnly => 3,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum SelfMatchingOptions {
+    SelfMatchingAllowed,
+    CancelTaker,
+    CancelMaker
+}
+
+impl SelfMatchingOptions {
+    pub fn as_u8(&self) -> u8 {
+        match self {
+            SelfMatchingOptions::SelfMatchingAllowed => 0,
+            SelfMatchingOptions::CancelTaker => 1,
+            SelfMatchingOptions::CancelMaker => 2,
+        }
+    }
+}
+
 pub struct DeepBookContract<'a> {
     config: &'a DeepBookConfig,
 }

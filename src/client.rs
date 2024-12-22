@@ -10,7 +10,7 @@ use crate::transactions::{
     deepbook_admin::DeepBookAdminContract, flash_loan::FlashLoanContract,
     governance::GovernanceContract,
 };
-use crate::utils::config::DeepBookConfig;
+use crate::utils::config::{DeepBookConfig, FLOAT_SCALAR, MAX_TIMESTAMP};
 use anyhow::{anyhow, Result};
 use log::debug;
 use sui_sdk::rpc_types;
@@ -22,10 +22,11 @@ use sui_sdk::types::base_types::SuiAddress;
 use sui_sdk::types::collection_types::VecSet;
 use sui_sdk::types::sui_serde::BigInt;
 use sui_sdk::types::TypeTag;
-use sui_types::base_types::ObjectID;
-use sui_types::Identifier;
+use sui_types::base_types::{ObjectID, SequenceNumber};
+use sui_types::{Identifier, SUI_CLOCK_OBJECT_ID};
 use sui_types::transaction::Argument;
 use sui_types::object::Owner;
+use crate::transactions::deepbook::{OrderType, SelfMatchingOptions};
 
 /// Main client for managing DeepBook operations.
 ///
@@ -276,6 +277,215 @@ impl<'a> DeepBookClient<'a> {
                 return Err(anyhow!("BalanceManager has no owner"));
             }
         }
+
+        Ok(())
+    }
+
+    /// Place a limit order in the given pool with specified parameters.
+    ///
+    /// # Arguments
+    /// * `pool_key` - The key to identify the pool.
+    /// * `manager_key` - The key of the balance manager.
+    /// * `client_order_id` - Unique identifier for the order.
+    /// * `price` - Price of the order.
+    /// * `quantity` - Quantity of the order.
+    /// * `is_bid` - Whether this is a bid order.
+    /// * `expiration` - Expiration timestamp for the order.
+    ///
+    /// # Returns
+    /// None on success, or an error.
+    pub async fn place_limit_order(
+        &self,
+        ptb: &mut ProgrammableTransactionBuilder,
+        pool_key: &str,
+        manager_key: &str,
+        client_order_id: &str,
+        price: f64,
+        quantity: f64,
+        is_bid: bool,
+        expiration: Option<u64>,
+        order_type: Option<OrderType>,
+        self_matching_option: Option<SelfMatchingOptions>,
+        pay_with_deep: Option<bool>,
+    ) -> Result<(), anyhow::Error> {
+        // default values
+        let expiration = expiration.unwrap_or(MAX_TIMESTAMP);
+        let order_type = order_type.unwrap_or(OrderType::NoRestriction);
+        let self_matching_option = self_matching_option.unwrap_or(SelfMatchingOptions::SelfMatchingAllowed);
+        let pay_with_deep = pay_with_deep.unwrap_or(true);
+
+        let pool = self
+            .config
+            .get_pool(pool_key)
+            .ok_or_else(|| anyhow!("Pool not found for key: {}", pool_key))?;
+
+        let manager = self
+            .config
+            .get_balance_manager(manager_key)
+            .ok_or_else(|| anyhow!("Balance manager not found for key: {}", manager_key))?;
+
+        let base_coin = self
+            .config
+            .get_coin(&pool.base_coin)
+            .ok_or_else(|| anyhow!("Base coin not found for key: {}", pool.base_coin))?;
+
+        let quote_coin = self
+            .config
+            .get_coin(&pool.quote_coin)
+            .ok_or_else(|| anyhow!("Quote coin not found for key: {}", pool.quote_coin))?;
+
+        // Calculate input price and quantity
+        let input_price = ((price * FLOAT_SCALAR as f64 * quote_coin.scalar as f64) / base_coin.scalar as f64).round() as u64;
+        let input_quantity = (quantity * base_coin.scalar as f64).round() as u64;
+
+        // Convert to ObjectArgs
+        let mut pool_argument: Option<Argument> = None;
+        let mut manager_argument: Option<Argument> = None;
+        let mut trade_proof_argument: Option<Argument> = None;
+
+        let pool_obj = self.client.read_api().get_object_with_options(
+            ObjectID::from_hex_literal(&pool.address)?,
+            SuiObjectDataOptions::new()
+                .with_content()
+                .with_type()
+                .with_owner(),
+        ).await?;
+        match pool_obj.owner() {
+            Some(owner) => {
+                match owner {
+                    Owner::Shared { initial_shared_version, .. } => {
+                        let initial_shared_version = initial_shared_version.clone();
+                        pool_argument = Some(ptb.obj(ObjectArg::SharedObject {
+                            id: ObjectID::from_hex_literal(&pool.address)?,
+                            initial_shared_version,
+                            mutable: true,
+                        })?);
+                    }
+                    _ => {
+                        return Err(anyhow!("Pool must be a shared object"));
+                    }
+                }
+            }
+            _ => {
+                return Err(anyhow!("Pool has no owner"));
+            }
+        }
+
+        let manager_obj = self.client.read_api().get_object_with_options(
+            ObjectID::from_hex_literal(&manager.address)?,
+            SuiObjectDataOptions::new()
+                .with_content()
+                .with_type()
+                .with_owner(),
+        ).await?;
+        match manager_obj.owner() {
+            Some(owner) => {
+                match owner {
+                    Owner::Shared { initial_shared_version, .. } => {
+                        let initial_shared_version = initial_shared_version.clone();
+                        manager_argument = Some(ptb.obj(ObjectArg::SharedObject {
+                            id: ObjectID::from_hex_literal(&manager.address)?,
+                            initial_shared_version,
+                            mutable: true,
+                        })?);
+                    }
+                    _ => {
+                        return Err(anyhow!("BalanceManager must be a shared object"));
+                    }
+                }
+            }
+            _ => {
+                return Err(anyhow!("BalanceManager has no owner"));
+            }
+        }
+
+        if let Some(trade_cap) = &manager.trade_cap {
+            let trade_cap_obj = self.client.read_api().get_object_with_options(
+                ObjectID::from_hex_literal(trade_cap)?,
+                SuiObjectDataOptions::new()
+                    .with_content()
+                    .with_type()
+                    .with_owner(),
+            ).await?;
+            let trade_cap_argument = ptb.obj(ObjectArg::ImmOrOwnedObject(
+                trade_cap_obj
+                    .object_ref_if_exists()
+                    .ok_or_else(|| anyhow!("Trade cap not found"))?
+            ))?;
+
+            trade_proof_argument = Some(self.balance_manager.generate_proof_as_trader(ptb, manager_argument.unwrap(), trade_cap_argument));
+        } else {
+            trade_proof_argument = Some(self.balance_manager.generate_proof_as_owner(ptb, manager_argument.unwrap()));
+        }
+
+        let base_coin_type = TypeTag::from_str(&base_coin.type_)?;
+        let quote_coin_type = TypeTag::from_str(&quote_coin.type_)?;
+
+        let sui_clock_obj = self.client.read_api().get_object_with_options(
+            ObjectID::from_hex_literal(SUI_CLOCK_OBJECT_ID.to_string().as_str())?,
+            SuiObjectDataOptions::new()
+                .with_content()
+                .with_type()
+                .with_owner(),
+        ).await?;
+
+        let mut sui_clock_argument: Option<Argument> = None;
+        match sui_clock_obj.owner() {
+            Some(owner) => {
+                match owner {
+                    Owner::Shared { initial_shared_version, .. } => {
+                        let initial_shared_version = initial_shared_version.clone();
+                        sui_clock_argument = Some(ptb.obj(ObjectArg::SharedObject {
+                            id: ObjectID::from_hex_literal(SUI_CLOCK_OBJECT_ID.to_string().as_str())?,
+                            initial_shared_version,
+                            mutable: false,
+                        })?);
+                    }
+                    _ => {
+                        return Err(anyhow!("SuiClock must be a shared object"));
+                    }
+                }
+            },
+            None => {
+                return Err(anyhow!("SuiClock has no owner"));
+            }
+        }
+
+        println!("client_order_id: {:?}", client_order_id);
+        let client_order_id_u64: u64 = client_order_id
+            .parse::<u64>()
+            .map_err(|e| anyhow!("Failed to parse client_order_id: {}", e))?;
+        println!("client_order_id_u64: {:?}", client_order_id_u64);
+        let client_order_id_arg = ptb.pure(client_order_id_u64)?;
+        let order_type_arg = ptb.pure(order_type.as_u8())?;
+        let self_matching_option_arg = ptb.pure(self_matching_option.as_u8())?;
+        let input_price_arg = ptb.pure(input_price)?;
+        let input_quantity_arg = ptb.pure(input_quantity)?;
+        let is_bid_arg = ptb.pure(is_bid)?;
+        let pay_with_deep_arg = ptb.pure(pay_with_deep)?;
+        let expiration_arg = ptb.pure(expiration)?;
+
+        // Add the programmable Move call
+        ptb.programmable_move_call(
+            ObjectID::from_hex_literal(&self.config.deepbook_package_id)?,
+            Identifier::new("pool")?,
+            Identifier::new("place_limit_order")?,
+            vec![base_coin_type, quote_coin_type],
+            vec![
+                pool_argument.unwrap(),
+                manager_argument.unwrap(),
+                trade_proof_argument.unwrap(),
+                client_order_id_arg,
+                order_type_arg,
+                self_matching_option_arg,
+                input_price_arg,
+                input_quantity_arg,
+                is_bid_arg,
+                pay_with_deep_arg,
+                expiration_arg,
+                sui_clock_argument.unwrap(),
+            ],
+        );
 
         Ok(())
     }
