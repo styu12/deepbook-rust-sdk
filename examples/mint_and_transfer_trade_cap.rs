@@ -29,7 +29,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "MANAGER_1".to_string(),
         BalanceManager {
             address: "0x0cb45faadd6c3769bd825dfd3538e34d6c658a0b55a8caa52e03c46b07aef8b9".to_string(),
-            // use trade_cap if you're not the owner of the balance manager
             trade_cap: None,
         },
     );
@@ -50,21 +49,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut ptb = ProgrammableTransactionBuilder::new();
 
-    match db_client.place_limit_order(
+    match db_client.mint_and_transfer_trade_cap(
         &mut ptb,
-        "DEEP_SUI", // pool_id
-        "MANAGER_1", // balance_manager_key
-        "123456789", // client_order_id
-        0.02, // price
-        10.0, // amount
-        true, // is_bid
-        None,
-        None,
-        None,
-        None,
+        "MANAGER_1",
+        receiver,
     ).await {
-        Ok(_) => println!("add place_limit_order transaction to PTB"),
-        Err(e) => println!("Error placing limit order: {}", e),
+        Ok(_) => {
+            println!("Add mint_and_transfer_trade_cap to the transaction block");
+        },
+        Err(e) => {
+            println!("Error minting and transferring trade cap: {:?}", e);
+        }
     }
 
     let pt = ptb.finish();

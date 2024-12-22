@@ -61,7 +61,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         &mut ptb,
         "MANAGER_1",
         "SUI",
-        1,
+        0.1,
     ).await {
         Ok(_) => println!("add deposit transaction to PTB (1 SUI for MANAGER_1)"),
         Err(e) => println!("Error depositing into MANAGER_1: {}", e),

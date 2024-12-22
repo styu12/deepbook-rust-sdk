@@ -22,7 +22,7 @@ use sui_sdk::types::base_types::SuiAddress;
 use sui_sdk::types::collection_types::VecSet;
 use sui_sdk::types::sui_serde::BigInt;
 use sui_sdk::types::TypeTag;
-use sui_types::base_types::{ObjectID, SequenceNumber};
+use sui_types::base_types::{ObjectID, ObjectRef, SequenceNumber};
 use sui_types::{Identifier, SUI_CLOCK_OBJECT_ID};
 use sui_types::transaction::Argument;
 use sui_types::object::Owner;
@@ -105,7 +105,7 @@ impl<'a> DeepBookClient<'a> {
         &self,
         pool_key: &str,
         manager_key: &str,
-    ) -> Result<Vec<u8>> {
+    ) -> Result<Vec<u128>> {
         // Step 1: create a programmable transaction builder to add commands and create a PTB
         let mut ptb = ProgrammableTransactionBuilder::new();
 
@@ -141,9 +141,9 @@ impl<'a> DeepBookClient<'a> {
             .unwrap_or_else(|| Vec::new());
 
         // Step 5: Parse the VecSet using BCS.
-        match bcs::from_bytes::<VecSet<u8>>(&order_ids_bcs) {
+        match bcs::from_bytes::<VecSet<u128>>(&order_ids_bcs) {
             Ok(vec_set) => {
-                let order_ids_vec: Vec<u8> = vec_set.contents;
+                let order_ids_vec: Vec<u128> = vec_set.contents;
                 Ok(order_ids_vec)
             }
             Err(e) => {
@@ -222,13 +222,13 @@ impl<'a> DeepBookClient<'a> {
         ptb: &mut ProgrammableTransactionBuilder,
         manager_key: &str,
         coin_key: &str,
-        amount_to_deposit: u64,
+        amount_to_deposit: f64,
     ) -> Result<()> {
         let coin = self
             .config
             .get_coin(coin_key)
             .expect("Coin not found");
-        let deposit_input = amount_to_deposit * coin.scalar;
+        let deposit_input = (amount_to_deposit * coin.scalar as f64) as u64;
         let coin_type = TypeTag::from_str(&coin.type_)?;
 
         let split_cmd = Command::SplitCoins(
@@ -266,6 +266,66 @@ impl<'a> DeepBookClient<'a> {
                             Identifier::new("deposit")?,
                             vec![coin_type],
                             vec![manager_argument, target_coin],
+                        );
+                    }
+                    _ => {
+                        return Err(anyhow!("BalanceManager must be a shared object"));
+                    }
+                }
+            },
+            None => {
+                return Err(anyhow!("BalanceManager has no owner"));
+            }
+        }
+
+        Ok(())
+    }
+
+    pub async fn mint_and_transfer_trade_cap(
+        &self,
+        ptb: &mut ProgrammableTransactionBuilder,
+        manager_key: &str,
+        receiver: SuiAddress,
+    ) -> Result<(), anyhow::Error> {
+        let manager = self
+            .config
+            .get_balance_manager(manager_key)
+            .ok_or_else(|| anyhow!("Manager not found for key {}", manager_key))?;
+
+        let manager_obj = self.client.read_api().get_object_with_options(
+            ObjectID::from_hex_literal(&manager.address)?,
+            SuiObjectDataOptions::new()
+                .with_content()
+                .with_type()
+                .with_owner(),
+        ).await?;
+
+        match manager_obj.owner() {
+            Some(owner) => {
+                match owner {
+                    Owner::Shared { initial_shared_version, .. } => {
+                        let initial_shared_version = initial_shared_version.clone();
+                        let manager_argument = ptb.obj(ObjectArg::SharedObject {
+                            id: ObjectID::from_hex_literal(&manager.address)?,
+                            initial_shared_version,
+                            mutable: true,
+                        })?;
+                        let trade_cap = ptb.programmable_move_call(
+                            ObjectID::from_hex_literal(&self.config.deepbook_package_id)?,
+                            Identifier::new("balance_manager")?,
+                            Identifier::new("mint_trade_cap")?,
+                            vec![],
+                            vec![manager_argument],
+                        );
+
+                        let trade_cap_type = TypeTag::from_str(format!("{}::balance_manager::TradeCap", self.config.deepbook_package_id).as_str())?;
+                        let receiver_arg = ptb.pure(receiver)?;
+                        ptb.programmable_move_call(
+                            ObjectID::from_hex_literal("0x2")?,
+                            Identifier::new("transfer")?,
+                            Identifier::new("public_transfer")?,
+                            vec![trade_cap_type],
+                            vec![trade_cap, receiver_arg],
                         );
                     }
                     _ => {
@@ -335,7 +395,9 @@ impl<'a> DeepBookClient<'a> {
             .ok_or_else(|| anyhow!("Quote coin not found for key: {}", pool.quote_coin))?;
 
         // Calculate input price and quantity
+        // TODO: do I have to multiply by FLOAT_SCALAR?
         let input_price = ((price * FLOAT_SCALAR as f64 * quote_coin.scalar as f64) / base_coin.scalar as f64).round() as u64;
+        // let input_price = ((price * quote_coin.scalar as f64) / base_coin.scalar as f64).round() as u64;
         let input_quantity = (quantity * base_coin.scalar as f64).round() as u64;
 
         // Convert to ObjectArgs
