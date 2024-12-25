@@ -5,11 +5,10 @@ mod utils;
 use deepbook::client::DeepBookClient;
 use deepbook::utils::constants::{BalanceManager, BalanceManagerMap};
 use std::collections::HashMap;
-use sui_sdk::types::programmable_transaction_builder::ProgrammableTransactionBuilder;
-use sui_sdk::types::transaction::CallArg;
+use std::sync::Arc;
 use tokio;
 use deepbook::DeepBookConfig;
-use crate::utils::{setup_for_read, setup_for_write};
+use crate::utils::{setup_for_read};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -38,21 +37,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
         None,
     );
-    let db_client = DeepBookClient::new(
-        sui,
-        &db_config,
-    );
+    let db_client = DeepBookClient::new(Arc::new(sui.clone()), Arc::new(db_config));
 
-    // Step 5: Define pools and fetch open orders
+    // Step 5: Define the pool and manager which you want to fetch open orders for
     let pools = vec!["SUI_DBUSDC", "DEEP_SUI"];
     let manager = "MANAGER_1";
 
+    // Step 6: Call account_open_orders with deepbook-sdk and check the response
+    println!("------------------------------------");
+    println!("Sui RPC Response");
     for pool in pools {
         match db_client.account_open_orders(pool, manager).await {
-            Ok(orders) => println!("Pool: {}, Orders: {:?}", pool, orders),
+            Ok(orders) => {
+                println!("[pool]\n {:?}", pool);
+                println!("[orders]\n {:?}\n", orders);
+            },
             Err(e) => println!("Error fetching orders for pool {}: {}", pool, e),
         }
     }
+    println!("------------------------------------");
 
     Ok(())
 }

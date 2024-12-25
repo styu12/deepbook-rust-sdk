@@ -3,14 +3,17 @@
 //
 // This Rust SDK is inspired by the Sui TypeScript SDK and developed independently by Jarry Han (styu12).
 
+use std::sync::Arc;
+use sui_sdk::SuiClient;
 use crate::DeepBookConfig;
 
-pub struct DeepBookAdminContract<'a> {
-    config: &'a DeepBookConfig,
+pub struct DeepBookAdminContract {
+    client: Arc<SuiClient>,
+    config: Arc<DeepBookConfig>,
 }
 
-impl<'a> DeepBookAdminContract<'a> {
-    pub fn new(config: &'a DeepBookConfig) -> Self {
-        DeepBookAdminContract { config }
+impl DeepBookAdminContract {
+    pub fn new(client: Arc<SuiClient>, config: Arc<DeepBookConfig>) -> Self {
+        DeepBookAdminContract { client, config }
     }
 }

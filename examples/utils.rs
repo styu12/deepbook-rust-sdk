@@ -2,16 +2,18 @@
 use std::{str::FromStr, time::Duration};
 use futures::{future, stream::StreamExt};
 use serde_json::json;
-use anyhow::bail;
+use anyhow::{bail, Result};
 use reqwest::Client;
+use shared_crypto::intent::Intent;
+use sui_config::{sui_config_dir, SUI_KEYSTORE_FILENAME};
+use sui_keys::keystore::{AccountKeystore, FileBasedKeystore};
 use sui_sdk::{SuiClient, SuiClientBuilder, sui_client_config::{SuiClientConfig, SuiEnv}, wallet_context::WalletContext, types::{
     base_types::{ObjectID, SuiAddress},
-    crypto::SignatureScheme::ED25519,
-    digests::TransactionDigest,
-    programmable_transaction_builder::ProgrammableTransactionBuilder,
-    quorum_driver_types::ExecuteTransactionRequestType,
-    transaction::{Argument, Command, Transaction, TransactionData},
-}, rpc_types::{SuiTransactionBlockResponseOptions, Coin, SuiObjectDataOptions}, rpc_types};
+}, rpc_types::{Coin, SuiObjectDataOptions}, rpc_types, SUI_COIN_TYPE};
+use sui_sdk::rpc_types::SuiTransactionBlockResponseOptions;
+use sui_types::programmable_transaction_builder::ProgrammableTransactionBuilder;
+use sui_types::quorum_driver_types::ExecuteTransactionRequestType;
+use sui_types::transaction::{Transaction, TransactionData};
 
 #[derive(serde::Deserialize)]
 struct FaucetResponse {
@@ -193,7 +195,7 @@ pub async fn get_all_coins(
     client: &SuiClient,
     address: SuiAddress,
     coin_type: &str,
-) -> anyhow::Result<Vec<rpc_types::Coin>> {
+) -> Result<Vec<Coin>> {
     let mut cursor = None;
     let mut coins = vec![];
 
@@ -213,4 +215,56 @@ pub async fn get_all_coins(
 
         return Ok(coins);
     }
+}
+
+/// Execute a transaction block with the given programmable transaction builder and sender address.
+/// Transaction will be signed based on your local Sui Keystore Configuration. (located at ~/.sui/sui_config/sui.keystore)
+pub async fn execute_transaction_block(
+    client: &SuiClient,
+    ptb: ProgrammableTransactionBuilder,
+    sender: SuiAddress,
+) -> Result<()> {
+    println!("Building the transaction...");
+    let pt = ptb.finish();
+
+    // get coins for gas fee
+    let coins = get_all_coins(client, sender, SUI_COIN_TYPE).await
+        .map_err(|e| anyhow::anyhow!("Failed to get coins for gas fee: {e}"))?;
+
+    // build the transaction data
+    let gas_price = client.read_api().get_reference_gas_price().await?;
+    let tx_data = TransactionData::new_programmable(
+        sender,
+        coins
+            .iter()
+            .map(|coin| coin.object_ref())
+            .collect::<Vec<_>>(),
+        pt,
+        10_000_000, // gas_budget (0.01 SUI)
+        gas_price,
+    );
+
+    // sign transaction
+    let keystore = FileBasedKeystore::new(&sui_config_dir()?.join(SUI_KEYSTORE_FILENAME))?;
+    let signature = keystore.sign_secure(&sender, &tx_data, Intent::sui_transaction())?;
+
+    // execute the transaction
+    println!("Executing the transaction...");
+    let transaction_response = client
+        .quorum_driver_api()
+        .execute_transaction_block(
+            Transaction::from_data(tx_data, vec![signature]),
+            SuiTransactionBlockResponseOptions::full_content(),
+            Some(ExecuteTransactionRequestType::WaitForLocalExecution),
+        )
+        .await?;
+
+    // print transaction results
+    println!("------------------------------------");
+    println!("Transaction Results");
+    println!("[hash]\n {:?}\n", transaction_response.digest.to_string());
+    println!("[effect]\n {:?}\n", transaction_response.effects);
+    println!("[object changes]:\n {:?}\n", transaction_response.object_changes);
+
+    Ok(())
 }

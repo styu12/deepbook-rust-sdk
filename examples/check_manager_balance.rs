@@ -1,6 +1,7 @@
 /// Example: Fetch balance of a balance manager
 
 use std::collections::HashMap;
+use std::sync::Arc;
 use deepbook::{DeepBookClient, DeepBookConfig};
 use deepbook::utils::constants::{BalanceManager, BalanceManagerMap};
 use crate::utils::setup_for_read;
@@ -34,15 +35,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
         None,
     );
-    let db_client = DeepBookClient::new(
-        sui,
-        &db_config,
-    );
+    let db_client = DeepBookClient::new(Arc::new(sui.clone()), Arc::new(db_config));
 
+    // Step 5: Call check_manager_balance with deepbook-sdk and check the response
+    println!("------------------------------------");
+    println!("Sui RPC Response");
     match db_client.check_manager_balance("MANAGER_1", "SUI").await {
-        Ok(balance) => println!("Balance: {:?}", balance),
-        Err(e) => println!("Error fetching balance: {}", e),
+        Ok(balance) => {
+            println!("[manager balance]\n {:?}\n", balance);
+        },
+        Err(e) => {
+            println!("Error fetching balance");
+            for source in e.chain() {
+                println!("Caused by: {}", source);
+            }
+        },
     }
+    println!("------------------------------------");
 
     Ok(())
 }

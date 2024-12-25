@@ -1,6 +1,7 @@
-/// Example: Mint and transfer trade cap
+/// [WIP] Example: Mint and transfer trade cap
 
 use std::collections::HashMap;
+use std::sync::Arc;
 use shared_crypto::intent::Intent;
 use sui_config::{sui_config_dir, SUI_KEYSTORE_FILENAME};
 use sui_keys::keystore::{AccountKeystore, FileBasedKeystore};
@@ -45,8 +46,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     );
     let db_client = DeepBookClient::new(
-        sui.clone(),
-        &db_config,
+        Arc::new(sui.clone()),
+        Arc::new(db_config),
     );
 
     let mut ptb = ProgrammableTransactionBuilder::new();
