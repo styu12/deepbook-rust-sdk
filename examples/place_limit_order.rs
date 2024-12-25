@@ -12,7 +12,7 @@ mod utils;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Step 1: Initialize Sui client for writing
-    let (sui, sender, receiver) = utils::setup_for_write().await?;
+    let (sui, sender, _receiver) = utils::setup_for_write().await?;
 
     // Step 2: Define environment
     let env = "testnet";

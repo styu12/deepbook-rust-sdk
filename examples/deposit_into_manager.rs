@@ -1,12 +1,8 @@
 /// Example: Deposit into a balance manager
 
-use fastcrypto::hash::HashFunction;
 use std::collections::HashMap;
 use std::sync::Arc;
 use sui_sdk::types::programmable_transaction_builder::ProgrammableTransactionBuilder;
-use sui_types::{
-    crypto::{Signer},
-};
 use deepbook::{DeepBookClient, DeepBookConfig};
 use deepbook::utils::constants::{BalanceManager, BalanceManagerMap};
 use crate::utils::{execute_transaction_block};
@@ -16,7 +12,7 @@ mod utils;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Step 1: Initialize Sui client for writing
-    let (sui, sender, receiver) = utils::setup_for_write().await?;
+    let (sui, sender, _receiver) = utils::setup_for_write().await?;
 
     // Step 2: Define environment
     let env = "testnet";

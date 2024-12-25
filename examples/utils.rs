@@ -7,9 +7,9 @@ use reqwest::Client;
 use shared_crypto::intent::Intent;
 use sui_config::{sui_config_dir, SUI_KEYSTORE_FILENAME};
 use sui_keys::keystore::{AccountKeystore, FileBasedKeystore};
-use sui_sdk::{SuiClient, SuiClientBuilder, sui_client_config::{SuiClientConfig, SuiEnv}, wallet_context::WalletContext, types::{
+use sui_sdk::{SuiClient, SuiClientBuilder, types::{
     base_types::{ObjectID, SuiAddress},
-}, rpc_types::{Coin, SuiObjectDataOptions}, rpc_types, SUI_COIN_TYPE};
+}, rpc_types::{Coin, SuiObjectDataOptions}, SUI_COIN_TYPE};
 use sui_sdk::rpc_types::SuiTransactionBlockResponseOptions;
 use sui_types::programmable_transaction_builder::ProgrammableTransactionBuilder;
 use sui_types::quorum_driver_types::ExecuteTransactionRequestType;
@@ -267,4 +267,8 @@ pub async fn execute_transaction_block(
     println!("[object changes]:\n {:?}\n", transaction_response.object_changes);
 
     Ok(())
+}
+
+fn main() {
+    println!("This is an example utility file.");
 }

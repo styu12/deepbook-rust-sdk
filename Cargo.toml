@@ -12,11 +12,11 @@ readme = "README.md"
 examples = ["examples"]
 
 [dependencies]
-sui_sdk = { git = "https://github.com/mystenlabs/sui", package = "sui-sdk"}
-sui_types = { git = "https://github.com/mystenlabs/sui", package = "sui-types"}
-sui_keys = { git = "https://github.com/mystenlabs/sui", package = "sui-keys"}
-sui_config = { git = "https://github.com/mystenlabs/sui", package = "sui-config"}
-shared_crypto = { git = "https://github.com/mystenlabs/sui", package = "shared-crypto"}
+sui_sdk = { git = "https://github.com/mystenlabs/sui", package = "sui-sdk" }
+sui_types = { git = "https://github.com/mystenlabs/sui", package = "sui-types" }
+sui_keys = { git = "https://github.com/mystenlabs/sui", package = "sui-keys" }
+sui_config = { git = "https://github.com/mystenlabs/sui", package = "sui-config" }
+shared_crypto = { git = "https://github.com/mystenlabs/sui", package = "shared-crypto" }
 serde = { version = "1.0", features = ["derive"] }
 reqwest = { version = "0.11", features = ["json"] }
 tokio = { version = "1", features = ["full"] }
@@ -26,4 +26,3 @@ anyhow = "1.0.94"
 bcs = "0.1.6"
 futures = "0.3.31"
 serde_json = "1.0.133"
-fastcrypto = "0.1.8"
