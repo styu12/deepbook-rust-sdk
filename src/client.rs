@@ -81,16 +81,16 @@ impl<'a> DeepBookClient<'a> {
         }
     }
 
-    /// Checks if a pool is whitelisted.
-    ///
-    /// # Arguments
-    /// * `pool_key` - The key identifying the pool.
-    ///
-    /// # Returns
-    /// A boolean indicating whether the pool is whitelisted.
-    pub async fn is_whitelisted(&self, _: &str) -> Result<bool, String> {
-        // Transaction logic placeholder.
-        Ok(true)
+    pub async fn create_and_share_balance_manager(
+        &self,
+        ptb: &mut ProgrammableTransactionBuilder,
+    ) -> Result<()> {
+        if let Err(e) = self.balance_manager.create_and_share_balance_manager(ptb) {
+            eprintln!("Failed to add create_and_share_balance_manager command to PTB: {}", e);
+            return Err(e);
+        }
+
+        Ok(())
     }
 
     /// Get open orders for a balance manager in a pool.
@@ -152,7 +152,6 @@ impl<'a> DeepBookClient<'a> {
             }
         }
     }
-
 
     /// Checks the balance of a specific coin for a balance manager.
     ///
@@ -217,6 +216,14 @@ impl<'a> DeepBookClient<'a> {
         }))
     }
 
+    /// Deposit funds into a balance manager.
+    /// # Arguments
+    /// * `ptb` - ProgrammableTransactionBuilder instance.
+    /// * `manager_key` - The key identifying the balance manager.
+    /// * `coin_key` - The key identifying the coin.
+    /// * `amount_to_deposit` - The amount to deposit.
+    /// # Returns
+    /// None on success, or an error.
     pub async fn deposit_into_manager(
         &self,
         ptb: &mut ProgrammableTransactionBuilder,
@@ -281,6 +288,14 @@ impl<'a> DeepBookClient<'a> {
         Ok(())
     }
 
+    /// Mint and transfer trade cap to a receiver.
+    /// With trade cap, the receiver can place orders via specified BalanceManager.
+    /// # Arguments
+    /// * `ptb` - ProgrammableTransactionBuilder instance.
+    /// * `manager_key` - The key identifying the balance manager.
+    /// * `receiver` - The address of the receiver.
+    /// # Returns
+    /// None on success, or an error.
     pub async fn mint_and_transfer_trade_cap(
         &self,
         ptb: &mut ProgrammableTransactionBuilder,
@@ -551,64 +566,4 @@ impl<'a> DeepBookClient<'a> {
 
         Ok(())
     }
-
-    // pub async fn create_and_share_balance_manager(
-    //     &self,
-    //     sender: SuiAddress,
-    // ) -> Result<()> {
-    //     // Step 1: create a programmable transaction builder to add commands and create a PTB
-    //     let mut ptb = ProgrammableTransactionBuilder::new();
-    //
-    //     // Create an Argument::Input for Pure 6 value of type u64
-    //     let input_value = 10u64;
-    //     let input_argument = CallArg::Pure(bcs::to_bytes(&input_value).unwrap());
-    //
-    //     // Add this input to the builder
-    //     ptb.input(input_argument)?;
-    //
-    //     // we need to find the coin we will use as gas
-    //     let coins = self
-    //         .client
-    //         .coin_read_api()
-    //         .get_coins(sender, None, None, None)
-    //         .await?;
-    //     let coin = coins.data.into_iter().next().unwrap();
-    //
-    //     // 2) split coin
-    //     // the amount we want in the new coin, 1000 MIST
-    //     let split_coin_amount = ptb.pure(1000u64)?; // note that we need to specify the u64 type
-    //     ptb.command(Command::SplitCoins(
-    //         Argument::GasCoin,
-    //         vec![split_coin_amount],
-    //     ));
-    //
-    //     // Step 2: Add the `create_and_share_balance_manager` Move call to the PTB
-    //     if let Err(e) = self.balance_manager.create_and_share_balance_manager(&mut ptb) {
-    //         eprintln!("Failed to add create_and_share_balance_manager command to PTB: {}", e);
-    //         return Err(e);
-    //     }
-    //
-    //     // Step 3: Execute the PTB and fetch the result
-    //     let pt = ptb.finish();
-    //
-    //     let gas_budget = BigInt::from(10_000);
-    //
-    //     let tx_data = TransactionKind::ProgrammableTransaction(pt.to_owned());
-    //     println!("Transaction data: {:?}", tx_data);
-    //
-    //     let response = self
-    //         .client
-    //         .read_api()
-    //         .dev_inspect_transaction_block(
-    //             SuiAddress::from_str(&self.config.address).unwrap(),
-    //             tx_data,
-    //             Some(gas_budget),
-    //             None,
-    //             None,
-    //         )
-    //         .await?;
-    //     println!("Transaction response: {:?}", response);
-    //
-    //     Ok(())
-    // }
 }

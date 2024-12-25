@@ -1,3 +1,5 @@
+/// Example: Mint and transfer trade cap
+
 use std::collections::HashMap;
 use shared_crypto::intent::Intent;
 use sui_config::{sui_config_dir, SUI_KEYSTORE_FILENAME};

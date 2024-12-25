@@ -1,24 +1,14 @@
-/// Example: Deposit into a balance manager
+/// Example: Create and share a balance manager
 
-use fastcrypto::hash::HashFunction;
-use std::collections::HashMap;
-use sui_sdk::SUI_COIN_TYPE;
-use sui_sdk::types::programmable_transaction_builder::ProgrammableTransactionBuilder;
-use sui_sdk::types::transaction::{Transaction, TransactionData};
-use shared_crypto::intent::{Intent};
-use sui_sdk::rpc_types::SuiTransactionBlockResponseOptions;
-use sui_sdk::types::quorum_driver_types::ExecuteTransactionRequestType;
-
-use sui_types::{
-    crypto::{Signer},
-};
-
+use shared_crypto::intent::Intent;
 use sui_config::{sui_config_dir, SUI_KEYSTORE_FILENAME};
-
 use sui_keys::keystore::{AccountKeystore, FileBasedKeystore};
-
+use sui_sdk::rpc_types::SuiTransactionBlockResponseOptions;
+use sui_sdk::SUI_COIN_TYPE;
+use sui_types::programmable_transaction_builder::ProgrammableTransactionBuilder;
+use sui_types::quorum_driver_types::ExecuteTransactionRequestType;
+use sui_types::transaction::{Transaction, TransactionData};
 use deepbook::{DeepBookClient, DeepBookConfig};
-use deepbook::utils::constants::{BalanceManager, BalanceManagerMap};
 use crate::utils::get_all_coins;
 
 mod utils;
@@ -31,24 +21,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Step 2: Define environment
     let env = "testnet";
     let coins = get_all_coins(&sui, sender, SUI_COIN_TYPE).await?;
-    println!("Gas coins: {:?}", coins);
-
-    // Step 3: Initialize balance managers
-    let mut balance_managers: BalanceManagerMap = HashMap::new();
-    balance_managers.insert(
-        "MANAGER_1".to_string(),
-        BalanceManager {
-            address: "0x0cb45faadd6c3769bd825dfd3538e34d6c658a0b55a8caa52e03c46b07aef8b9".to_string(),
-            trade_cap: None,
-        },
-    );
 
     // Step 4: Initialize DeepBookClient with DeepBookConfig
     let db_config = DeepBookConfig::new(
         env,
         sender.to_string(),
         None,
-        Some(balance_managers),
+        None,
         None,
         None,
     );
@@ -59,14 +38,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut ptb = ProgrammableTransactionBuilder::new();
 
-    match db_client.deposit_into_manager(
-        &mut ptb,
-        "MANAGER_1",
-        "SUI",
-        0.1,
-    ).await {
-        Ok(_) => println!("add deposit transaction to PTB (1 SUI for MANAGER_1)"),
-        Err(e) => println!("Error depositing into MANAGER_1: {}", e),
+    match db_client.create_and_share_balance_manager(&mut ptb).await {
+        Ok(_) => println!("add create_and_share_balance_manager transaction to PTB"),
+        Err(e) => println!("Error creating and sharing balance manager: {}", e),
     }
 
     println!("Building the transaction...");
@@ -81,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .map(|coin| coin.object_ref())
             .collect::<Vec<_>>(),
         pt,
-    10_000_000, // gas_budget (0.01 SUI)
+        10_000_000, // gas_budget (0.01 SUI)
         gas_price,
     );
 

@@ -31,12 +31,6 @@ impl<'a> BalanceManagerContract<'a> {
         &self,
         ptb: &mut ProgrammableTransactionBuilder,
     ) -> Result<(), anyhow::Error> {
-        let input_value = 10u64;
-        let input_argument = CallArg::Pure(bcs::to_bytes(&input_value).unwrap());
-
-        ptb.input(input_argument).map_err(|e| anyhow!(e)).unwrap();
-
-        // add a move call to the PTB
         let manager = ptb.programmable_move_call(
             ObjectID::from_hex_literal(&self.config.deepbook_package_id)?,
             Identifier::new("balance_manager")?,
