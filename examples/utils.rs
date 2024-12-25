@@ -23,9 +23,9 @@ struct FaucetResponse {
 
 pub const SUI_FAUCET: &str = "https://faucet.testnet.sui.io/v1/gas"; // testnet faucet
 pub const SUI_STATUS: &str = "https://faucet.testnet.sui.io/v1/status"; // testnet status
-// TODO: change the address to the one you want to use for testing
-const SENDER_ADDRESS: &str = "0x63caf24ab6dfc41c44fd67e7e117e2f0a4ef0f636fed9ddddde2f1bd230bae8e";
-const RECIPIENT_ADDRESS: &str = "0xf4225f3f311cd5aa6ca53df437cb8cbd9d34b1bc979ff89e9356587692e21ebf";
+// TODO: Replace with the Sui Address you want to use for testing.
+const SENDER_ADDRESS: &str = "";
+const RECIPIENT_ADDRESS: &str = "";
 
 /// Return a sui client to interact with the APIs,
 /// the active address of the local wallet, and another address that can be used as a recipient.

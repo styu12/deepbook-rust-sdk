@@ -67,7 +67,10 @@ The examples directory contains additional examples for using the SDK:
 - [Place a new Limit Order](./examples/place_limit_order.rs)
 - [Fetching open orders for an account](./examples/account_open_orders.rs)
 
+> **Note**: Before running the examples, make sure to update the `SENDER_ADDRESS` and `RECIPIENT_ADDRESS` variables in the [utils.rs](./examples/utils.rs) file with the Sui Addresses you want to use for testing.  
+> Ensure these addresses have sufficient funds for transactions.
+
+
 ### Documentation
 
-Full API documentation is available at [Sui Deepbook SDK Docs](https://docs.sui.io/standards/deepbookv3-sdk).
-<br />*(Currently this documentation is TypeScript SDK Documentation)*
+Full API documentation is available at [Deepbook Rust SDK Docs](https://deepbook-rust-sdk-docs.vercel.app/).
